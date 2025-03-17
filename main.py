@@ -37,7 +37,9 @@ def get_todays_weather(city_name):
     It calls our async MCP function and returns the result.
     """
     print(f"🔧 Tool called for city: {city_name}")
-    if city_name.lower() == "nowhere":
+    if (
+        city_name.lower() == "nowhere"
+    ):  # for some reason it decides to call the tool with "nowhere" as the city name sometimes
         print("Tool call skipped - no city name provided")
         return ""
     result = asyncio.run(get_weather_mcp(city_name))
@@ -207,7 +209,7 @@ def chat_with_llama(messages=None, tools_enabled=None):
         tools_enabled = is_weather_query(last_user_message)
 
     if tools_enabled:
-        print("📝 Tools enabled - weather query detected")
+        print("📝 Tools enabled")
 
     try:
         # Options for the model
@@ -362,6 +364,43 @@ def run_interactive_chat():
 
 
 if __name__ == "__main__":
-    # Run interactive chat
-    print("\nStarting interactive chat session...")
-    run_interactive_chat()
+    # run tests or interactive chat
+    if (
+        input(
+            "Please type test to enter the test mode instead of the interactive test session: \n"
+        )
+        == "test"
+    ):
+        tc_choice = input(
+            "Would you like the tests to occur with tool calling on, off, or auto?: \n"
+        )
+        TC_MODE = None
+        if tc_choice == "on":
+            TC_MODE = True
+        elif tc_choice == "off":
+            TC_MODE = False
+        input("Press Enter to start the tests...")
+        print("Starting tests...")
+        test_strings = [
+            "What's 13 + 13?",  # shouldn't call a tool
+            "What's the weather in London today?",  # should call tool on london
+            "What's the weather in Paris today?",  # should call tool on paris
+            "How's it in Seattle?",  # should call tool on seattle
+            "is seattle hotter today? or nyc?",  # should call tool on seattle and nyc
+            "What's a typical sauce for bread?",  # shouldn't call a tool
+            "Pineapple on pizza?",  # shouldn't call a tool
+            "Do you like quesadillas?",  # shouldn't call a tool
+            "What's the weather in Norway today?",  # shouldn't call a tool
+            "Where in the world is madagascar?",  # shouldn't call a tool
+        ]
+
+        for test_string in test_strings:
+            print("\n\n----------------------------------")
+            print(f"Testing with input: {test_string}")
+            messages = [{"role": "user", "content": test_string}]
+            response = chat_with_llama(messages, tools_enabled=TC_MODE)
+            print(f"Response: {response.message.content}")
+        print("Testing Finished")
+    else:
+        print("\nStarting interactive chat session...")
+        run_interactive_chat()

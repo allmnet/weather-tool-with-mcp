@@ -22,7 +22,7 @@ You are a helpful assistant with tool calling capabilities.
 {{- if eq .Role "user" }}<|start_header_id|>user<|end_header_id|>
 {{- if and $.Tools $last }}
 
-Analyse the given prompt and decided whether or not it can be answered by a tool.  If it can, use the following functions to respond with a JSON for a function call with its proper arguments that best answers the given prompt. Otherwise, just respond as per usual like a normal assistant and ignore the tool.
+Use the following functions to respond with a JSON for a function call with its proper arguments that best answers the given prompt if and only if a tool call would help answer the user prompt. Otherwise, just respond as per usual like a normal assistant and ignore the tool.
 
 Respond in the format {"name": function name, "parameters": dictionary of argument name and its value}. Do not use variables.
 
