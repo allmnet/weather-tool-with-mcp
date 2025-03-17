@@ -7,5 +7,7 @@
 - create a custom ollama model called llama3.1-tool:8b using the modelfile and llama3.1:8b as a base
 
 # Usage:
-`ollama serve`
-`uv run main.py`
+```sh
+ollama serve
+uv run main.py
+```
