@@ -1,7 +1,7 @@
 Raahil Jain, 
 net id:rairai77
 ## YouTube link for EC demo
-[]() 
+[https://youtu.be/CkolBwuwR2Y](https://youtu.be/CkolBwuwR2Y) 
 
 # Introduction
 LLMs do not have access to realtime data, they are trained on data from a fixed time point, often months before use, and don't they often get updated with the latest data. Prompting Claude 3.7 Sonnet, Anthropics latest and greatest model, for its knowledge cutoff shows just how old the data can be! Its cutoff is October 2024.
