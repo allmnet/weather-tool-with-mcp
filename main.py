@@ -6,19 +6,20 @@ from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 import ollama
 
-# Set the model name to Llama 3.1 8B
+# Set the model name to a custom modelfile version of Llama 3.1 8B
 MODEL_NAME = "llama3.1-tool:8b"
 
 # Create server parameters for stdio connection
 server_params = StdioServerParameters(
-    command="uv",  # Executable
-    args=["run", "server.py"],  # Optional command line arguments
+    command="uv",
+    args=["run", "server.py"],
 )
 
 
 # Define the weather tool that will be registered
 async def get_weather_mcp(city_name):
     """Get today's weather for a specific city using MCP"""
+    # as per the example in the MCP Python repo
     async with stdio_client(server_params) as (read, write):
         async with ClientSession(read, write) as session:
             # Initialize the connection
@@ -39,9 +40,11 @@ def get_todays_weather(city_name):
     print(f"🔧 Tool called for city: {city_name}")
     if (
         city_name.lower() == "nowhere"
-    ):  # for some reason it decides to call the tool with "nowhere" as the city name sometimes
+    ):  # for some reason it decides to call the tool with "nowhere" as the city name sometimes if it wants nothing to happen
         print("Tool call skipped - no city name provided")
         return ""
+
+    # run the tool
     result = asyncio.run(get_weather_mcp(city_name))
 
     return result
@@ -49,6 +52,7 @@ def get_todays_weather(city_name):
 
 def get_tools():
     """Get the tools in OpenAI-compatible format"""
+    # this defines the tool for the LLM, as per the ollama function calling spec
     weather_tool = {
         "type": "function",
         "function": {
@@ -66,11 +70,17 @@ def get_tools():
             },
         },
     }
+    # return the tool in a list (as per the ollama function calling spec, but also to make it easier in case I wanted to add another tool)
     return [weather_tool]
 
 
 def is_weather_query(text):
-    """Determine if a query is weather-related"""
+    """
+    Determine if a query is weather-related,
+    I found this to be the best performing way of determining whether to call the tool or not,
+    since llama tends to want to call the tool for everything until I made some modelfile changes,
+    but after making the modelfile changes it feels the need to announce that it's NOT calling the tool for some reason.
+    """
     # List of weather-related keywords
     weather_keywords = [
         "weather",
@@ -118,30 +128,20 @@ def is_weather_query(text):
         if re.search(pattern, text_lower):
             return True
 
+    # No weather-related keywords or patterns found
     return False
-
-
-# def safe_serialize(obj):
-#     """Convert complex objects to serializable dictionaries"""
-#     if hasattr(obj, "model_dump"):
-#         return obj.model_dump()
-#     elif hasattr(obj, "__dict__"):
-#         return obj.__dict__
-#     elif isinstance(obj, list):
-#         return [safe_serialize(item) for item in obj]
-#     elif isinstance(obj, dict):
-#         return {k: safe_serialize(v) for k, v in obj.items()}
-#     else:
-#         return obj
 
 
 def process_tool_calls(message):
     """Process tool calls from the model message"""
+
+    # Check if there are tool calls
     if not hasattr(message, "tool_calls") or not message.tool_calls:
         return []
 
     tool_results = []
 
+    # Process each tool call
     for i, tool_call in enumerate(message["tool_calls"]):
         try:
             # Extract function information
@@ -172,13 +172,14 @@ def process_tool_calls(message):
             if not city_name:
                 continue
 
-            # Call the function
+            # Call the function, note that right now the function is hardcoded to be get_todays_weather,
+            # but in the future i can use the function name  parameter to call the correct function
             result = get_todays_weather(city_name)
 
             # Tool call ID
             tool_call_id = getattr(tool_call, "id", f"call_{i}")
 
-            # Add to results - convert result to string
+            # Add to results as per llama's expectations for a tool call response - convert result to string
             tool_results.append(
                 {
                     "role": "tool",
@@ -194,10 +195,8 @@ def process_tool_calls(message):
     return tool_results
 
 
-def chat_with_llama(messages=None, tools_enabled=None):
+def chat_with_llama(messages, tools_enabled=None):
     """Utility function to chat with the model using tools"""
-    if messages is None:
-        messages = [{"role": "user", "content": "What's the weather in London today?"}]
 
     # Get the last user message
     last_user_message = next(
@@ -205,18 +204,23 @@ def chat_with_llama(messages=None, tools_enabled=None):
     )
 
     # Decide whether to use tools based on the message content
+    # note that None is equivalent to auto
     if tools_enabled is None:
         tools_enabled = is_weather_query(last_user_message)
 
     if tools_enabled:
-        print("📝 Tools enabled")
+        print("📝 Tools enabled")  # Just to let the user know
 
     try:
         # Options for the model
-        options = {"temperature": 0.7}  # Default for normal conversation
+        options = {
+            "temperature": 0.7
+        }  # Default for normal conversation, can be adjusted, but seems to work well
 
         if tools_enabled:
-            options["temperature"] = 0.1  # Lower for tool calls
+            options["temperature"] = (
+                0.1  # Lower for tool calls, can be adjusted, but seems to work well
+            )
 
             # First message to get response (may include tool calls)
             response = ollama.chat(
@@ -284,12 +288,16 @@ def chat_with_llama(messages=None, tools_enabled=None):
     except Exception as e:
         print(f"Error: {e}")
 
-        # Create a simple response with error message
+        # Create a simple response with error message so client code doesn't crash
         class SimpleResponse:
+            """Simple response class for error handling"""
+
             def __init__(self, content):
                 self.message = SimpleMessage(content)
 
         class SimpleMessage:
+            """Simple message class for error handling"""
+
             def __init__(self, content):
                 self.content = content
 
@@ -400,7 +408,14 @@ if __name__ == "__main__":
             messages = [{"role": "user", "content": test_string}]
             response = chat_with_llama(messages, tools_enabled=TC_MODE)
             print(f"Response: {response.message.content}")
-        print("Testing Finished")
+        print("Testing Tool Use Model Finished")
+        print("Testing regular ollama")
+        for test_string in test_strings:
+            print("\n\n----------------------------------")
+            print(f"Testing with input: {test_string}")
+            messages = [{"role": "user", "content": test_string}]
+            response = ollama.chat(model="llama3.1:8b", messages=messages)
+            print(f"Response: {response["message"].content}")
     else:
         print("\nStarting interactive chat session...")
         run_interactive_chat()
