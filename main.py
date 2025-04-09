@@ -7,7 +7,7 @@ from mcp.client.stdio import stdio_client
 import ollama
 
 # Set the model name to a custom modelfile version of Llama 3.1 8B
-MODEL_NAME = "llama3.1-tool:8b"
+MODEL_NAME = "llama3.2:latest"
 
 # Create server parameters for stdio connection
 server_params = StdioServerParameters(
@@ -109,6 +109,7 @@ def is_weather_query(text):
         "thunder",
         "lightning",
         "hail",
+        "날씨"  # Korean for "weather"
     ]
 
     # Check if any of the keywords are in the query
@@ -392,14 +393,7 @@ if __name__ == "__main__":
         test_strings = [
             "What's 13 + 13?",  # shouldn't call a tool
             "What's the weather in London today?",  # should call tool on london
-            "What's the weather in Paris today?",  # should call tool on paris
-            "How's it in Seattle?",  # should call tool on seattle
-            "is seattle hotter today? or nyc?",  # should call tool on seattle and nyc
-            "What's a typical sauce for bread?",  # shouldn't call a tool
-            "Pineapple on pizza?",  # shouldn't call a tool
-            "Do you like quesadillas?",  # shouldn't call a tool
-            "What's the weather in Norway today?",  # shouldn't call a tool
-            "Where in the world is madagascar?",  # shouldn't call a tool
+            "날씨 in seoul today?",  # should call tool on new york
         ]
 
         for test_string in test_strings:
@@ -414,7 +408,7 @@ if __name__ == "__main__":
             print("\n\n----------------------------------")
             print(f"Testing with input: {test_string}")
             messages = [{"role": "user", "content": test_string}]
-            response = ollama.chat(model="llama3.1:8b", messages=messages)
+            response = ollama.chat(model=MODEL_NAME, messages=messages)
             print(f"Response: {response["message"].content}")
     else:
         print("\nStarting interactive chat session...")

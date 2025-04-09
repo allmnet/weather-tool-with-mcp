@@ -5,6 +5,7 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
+    "beautifulsoup4>=4.13.3",
     "dotenv>=0.9.9",
     "mcp-client>=0.2.0",
     "mcp[cli]>=1.4.1",

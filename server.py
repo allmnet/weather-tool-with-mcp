@@ -6,6 +6,7 @@ from mcp.server.fastmcp import FastMCP
 from dotenv import dotenv_values
 import requests
 
+WEATER_KEY = '--'
 
 mcp = FastMCP(name="weather", host="127.0.0.1", port=50000, timeout=30)
 env = dotenv_values()
@@ -17,7 +18,7 @@ def get_todays_weather(city_name: str) -> str:
     """
     Get today's weather for `city_name` city
     """
-    url = WEATHER_URL.replace("WEATHER_KEY", env["WEATHER_KEY"]).replace(
+    url = WEATHER_URL.replace("WEATHER_KEY", WEATER_KEY).replace(
         "CITY_NAME", city_name
     )
     response = requests.get(url, timeout=10)
